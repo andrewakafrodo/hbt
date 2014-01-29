@@ -1,0 +1,80 @@
+/* Fixed navbar that is 50px tall */
+body {
+  padding-top: 50px;
+}
+
+/* Center canvas. */
+#canvas {
+	padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+.btn-toolbar {
+	text-align: center;
+}
+
+#dust {
+	position:absolute;
+	left: 0;
+	right: 0;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.table-nonfluid {
+	width: auto;
+}
+
+#habit-history {
+	position: relative;
+}
+
+#add-habit, #update-habits {
+	margin-top: 5px;
+	margin-left: 5px;
+	float: left;
+}
+
+.complete {
+	color: #4C9900;
+}
+
+.todo {
+	color: #990000;
+}
+
+.date-column {
+	width: 110px !important;
+}
+
+#habit-table td,
+#habit-table th,
+#habit-name-row-table td,
+#habit-name-row-table th {
+	text-align: center;
+	width: auto;
+}
+
+#habit-name-row-table {
+	z-index: 10;
+}
+
+.habit-name-row {
+	background: lightgray;
+}
+
+#habit-name-row-table,
+#habit-table {
+    position: absolute;
+}
+
+#habit-name-row-table tr.affix {
+    top: 50px;
+}
+
+#habit-actions.affix {
+	top: 50px;
+}
