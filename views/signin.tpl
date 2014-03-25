@@ -11,7 +11,7 @@
   <body>
 
     <div class="container text-center">
-		<h1 >hbt</h1>
+		<h1>hbt</h1>
 		<form class="form-signin" action="/signin" method="post">
 			<h2 class="form-signin-heading text-center">sign in</h2>
 			<input type="text" class="form-control" placeholder="username" name="username" required="" autofocus="" value="{{username}}">
