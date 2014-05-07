@@ -21,12 +21,13 @@ class User:
 
         return hashlib.sha256(password + salt).hexdigest() + "," + salt
 
-    def add_user(self, username, password):
+    def add_user(self, username, email, password):
         password_hash = self.create_password_hash(password)
 
         today = datetime.datetime.now().date()
 
         user = {'_id': username,
+                'email' : email,
                 'password': password_hash,
                 'dateJoined': str(today)}
 
@@ -54,6 +55,9 @@ class User:
 
         user = self.find_user(username)
 
+        if user is None:
+            return None
+
         salt = user['password'].split(',')[1]
 
         if user['password'] != self.create_password_hash(password, salt):
@@ -76,21 +80,27 @@ class User:
 
         return user
 
-    def validate_signup(self, username, password, verify, errors):
+    def validate_signup(self, username, email, password, verify, errors):
         USER_REGEX = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
+        EMAIL_REGEX = re.compile(r"^(\w+[.|\w])*@(\w+[.])*\w+$")
         PASSWORD_REGEX = re.compile(r"^.{6,30}$")
 
         errors['username_error'] = ""
+        errors['email_error'] = ""
         errors['password_error'] = ""
         errors['verify_error'] = ""
 
         if not USER_REGEX.match(username):
             errors['username_error'] = "username must be composed of letters and numbers"
+            return 
+
+        if not EMAIL_REGEX.match(email):
+            errors['email_error'] = "email must be valid"
             return False
 
         if not PASSWORD_REGEX.match(password):
             if (len(password) < 6 or len(password) > 40):
-                errors['password_error'] = "password must be between 6 and 30 characters long"
+                errors['password_error'] = "password must be between 6 and 40 characters long"
             else:
                 errors['password_error'] = "invalid password"
             return False
