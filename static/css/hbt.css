@@ -3,6 +3,70 @@ body {
   padding-top: 50px;
 }
 
+.dropdown-menu {
+  min-width: 0px;
+}
+
+.col-centered{
+	float: none;
+	margin: 0 auto;
+}
+
+.center {
+	float: none;
+	margin-left: auto;
+	margin-right: auto; }
+
+
+.habit-row {
+	position: relative;
+	background-color: lightcoral;
+	border-radius: 10px;
+	margin-bottom: 10px;
+	padding: 3px 10px 3px 20px;
+}
+.habit-row.checked {
+	background-color: yellowgreen;
+}
+
+p { margin:0 }
+
+.habit-check {
+	position: absolute;
+	font-size: 5em;
+	z-index:10;
+}
+
+.glyphicon-ok-small {
+	color: #4C9900;
+	right: 15px;
+}
+
+.glyphicon-remove-small {
+	color: #990000;
+	right: 10px;
+}
+
+.fa-circle-o {
+	color: #990000;
+}
+
+.fa-check-circle-o {
+	color: #4C9900;
+}
+
+.habit-title {
+	background-color: lightgray;
+	height: 80px;
+	border-radius: 5px;
+}
+
+
+
+
+
+
+
 /* Center canvas. */
 #canvas {
 	padding-left: 0;
@@ -38,12 +102,9 @@ body {
 	float: left;
 }
 
-.complete {
-	color: #4C9900;
-}
-
-.todo {
-	color: #990000;
+.col-md-1 {
+    padding-left: 2px;
+    padding-right: 2px;
 }
 
 .date-column {
