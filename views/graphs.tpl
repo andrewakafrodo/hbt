@@ -1,6 +1,6 @@
-%include ('head.tpl')
+%include ('head.tpl', css='hbt')
 
-%include ('navbar.tpl')
+%include ('navbar.tpl', logged_in=True)
 
 	    <div class="container">
 			<h1 class="text-center">{{title}}</h1>
@@ -16,6 +16,7 @@
 				</div>
 			</div>
 		</div>
+		<script src="/static/js/Chart.min.js"></script>
 
 
 		<script>
@@ -33,9 +34,6 @@
 			}
 
 			var myLine = new Chart(document.getElementById("canvas").getContext("2d")).Line(lineChartData);
-
 		</script>
-		<script src="//code.jquery.com/jquery.js"></script>
-		<script src="//netdna.bootstrapcdn.com/bootstrap/3.0.2/js/bootstrap.min.js"></script>
-	</body>
-</html>
+
+%include ('tail.tpl')
