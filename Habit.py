@@ -18,8 +18,6 @@ class Habit:
         habit = { 'username'           : username,
                   '_id'                : name,
                   'interval'           : interval,
-                  'occurence'          : occurence,
-                  'reminders'          : reminders,
                   'categories'         : categories,
                   'dateCreated'        : str(today), 
                   'completedIntervals' : {
@@ -35,36 +33,38 @@ class Habit:
             print 'unexpected error:', sys.exc_info()[0]
 
    
-    def get_user_habits(self, username):
+    def get_user_habits(self, username, interval=None):
 
         cursor = self.habits.find({'username' : username})
 
         l = []
 
         for habit in cursor:
-            l.append({'name' : habit['_id'],
-                      'interval' : habit['interval'],
-                      'occurence' : habit['occurence'],
-                      'reminders' : habit['reminders'],
-                      'categories' : habit['categories'],
-                      'dateCreated' : habit['dateCreated'],
-                      'completedIntervals' : habit['completedIntervals']})
+            if interval is None:
+                l.append({'name' : habit['_id'],
+                          'interval' : habit['interval'],
+                          'categories' : habit['categories'],
+                          'dateCreated' : habit['dateCreated'],
+                          'completedIntervals' : habit['completedIntervals']})
+            elif habit['interval'] == interval: 
+                l.append({'name' : habit['_id'],
+                          'interval' : habit['interval'],
+                          'categories' : habit['categories'],
+                          'dateCreated' : habit['dateCreated'],
+                          'completedIntervals' : habit['completedIntervals']})
 
         return l
 
-    def get_habit(self, name):
-        habit = self.habits.find_one({'_id': name})
+    def get_habit(self, name, username):
+        habit = self.habits.find_one({'_id': name, 'username' : username})
 
         habit = {'name': habit['_id'],
-                  'interval' : habit['interval'],
-                  'occurence' : habit['occurence'],
-                  'reminders' : habit['reminders'],
-                  'categories' : habit['categories'],
-                  'dateCreated' : habit['dateCreated'],
-                  'completedIntervals' : habit['completedIntervals']}
+                 'interval' : habit['interval'],
+                 'categories' : habit['categories'],
+                 'dateCreated' : habit['dateCreated'],
+                 'completedIntervals' : habit['completedIntervals']}
 
         return habit
-
 
     def update_habit_interval_count(self, habit, count):
         self.habits.update({'_id' : habit['name']}, {'$set': {'completedIntervals.count' : count} }, upsert=False)
@@ -78,21 +78,25 @@ class Habit:
         count = 0
         
         for habit in habits:
-            time_delta = today - datetime.datetime.strptime(habit['dateCreated'], "%Y-%m-%d").date()
-            for day in range(time_delta.days + 1):
-                if str(day) not in habit['completedIntervals']:
-                    habit['completedIntervals'][str(day)] = False
-                else:
-                    count = count + 1 if habit['completedIntervals'][str(day)] else count
+            if habit['interval'] == 'daily':
+                time_delta = today - datetime.datetime.strptime(habit['dateCreated'], "%Y-%m-%d").date()
+                for day in range(time_delta.days + 1):
+                    if str(day) not in habit['completedIntervals']:
+                        habit['completedIntervals'][str(day)] = False
+                    else:
+                        count = count + 1 if habit['completedIntervals'][str(day)] else count
+            elif habit['interval'] == 'weekly':
+                print None
+            elif habit['interval'] == 'monthly':
+                print None
 
             self.update_habit_intervals(habit)
             self.update_habit_interval_count(habit, count)
             count = 0
-
         
+    def get_oldest_habit_date(self, username, interval):
 
-    def get_oldest_habit_date(self, username):
-        cursor = self.habits.find({'username' : username}).sort('dateCreated', pymongo.ASCENDING).limit(1)
+        cursor = self.habits.find({'username' : username, 'interval' : interval}).sort('dateCreated', pymongo.ASCENDING).limit(1)
 
         return cursor[0]['dateCreated']
 
@@ -121,7 +125,6 @@ class Habit:
 
         return l
 
-
     def get_habits_by_category(self, username, category):
 
         cursor = self.habits.find({'username' : username}, {'categories' : { '$in' : [category] } } )
@@ -131,8 +134,6 @@ class Habit:
         for habit in cursor:
             l.append({'name': habit['_id'],
                       'interval' : habit['interval'],
-                      'occurence' : habit['occurence'],
-                      'reminders' : habit['reminders'],
                       'categories' : habit['categories']})
 
         return l
