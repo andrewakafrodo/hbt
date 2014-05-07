@@ -1,6 +1,6 @@
-%include ('head.tpl')
+%include ('head.tpl', title=title, css='hbt')
 
-%include ('navbar.tpl')
+%include ('navbar.tpl', logged_in=True)
 
 	    <div class="container">
 	    	<div class="col-sm-2"></div>
@@ -20,22 +20,6 @@
 						<option>weekly</option>
 						<option>monthly</option>
 					</select>
-			    </div>
-			  </div>
-  			  <div class="form-group">
-			    <label for="occurence" class="col-sm-2 control-label">occurence</label>
-			    <div class="col-sm-10">
-  					<select name="occurence" id="occurence" class="form-control">
-						<option>once</option>
-						<option>twice</option>
-						<option>thrice</option>
-					</select>
-			    </div>
-			  </div>
-			  <div class="form-group">
-			    <label for="reminders" class="col-sm-2 control-label">reminders</label>
-			    <div class="col-sm-10">
-			      <input type="text" name="reminders" id="reminders" class="form-control" placeholder="bring canteen, make sure to check LinkedIn, bring ear plugs, etc.">
 			    </div>
 			  </div>
   			  <div class="form-group">
