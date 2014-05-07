@@ -1,6 +1,6 @@
-%include ('head.tpl')
+%include ('head.tpl', title=title, css='hbt')
 
-%include ('navbar.tpl')
+%include ('navbar.tpl', logged_in=False)
 
 	    <div class="container">
 	    	<div class="text-center">
