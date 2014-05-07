@@ -1,14 +1,14 @@
 import json
 import Habit
-import Day
 import Session
 import User
 import cgi
 import datetime
 import hashlib
 
+from dateutil.relativedelta import relativedelta
 from bottle import route, get, post, put, debug, run, request, redirect
-from bottle import template, static_file, error, response
+from bottle import template, static_file, error, response, HTTP_CODES, abort
 from pymongo import MongoClient
 
 
@@ -16,44 +16,67 @@ from pymongo import MongoClient
 # ROUTES
 ####
 
+@route('/')
+def get_welcome():
+    username = check_logged_in()
+
+    if username:
+        redirect('/habits/daily')
+
+    return template('welcome', dict(title='welcome'))
+
+@route('/edit_profile')
+def get_edit_profile():
+    username = check_logged_in()
+    return template('edit_profile', dict(title='edit profile', username=username))
+
 @route('/signup')
 def get_signup():
-    return template('signup', dict(username='', password='', password_error='',
-                                   username_error='', verify_error =''))
+    return template('signup', dict(title='sign up', username='', email='', password='', password_error='',
+                                   username_error='', email_error='', verify_error =''))
 
 @route('/signin')
 def get_signin():
-    return template('signin', dict(username='', password='', login_error=''))
+    return template('signin', dict(title='sign in', username='', password='', login_error=''))
 
-@route('/')
 @route('/habits')
 def get_habits():
+
+    redirect('/habits/daily')
+
+@route('/habits/<interval>')
+def get_interval_habits(interval):
     username = check_logged_in()
     user = users.get_user(username)
-    today = datetime.datetime.now().date()
+    today = datetime.datetime.now()
     earliest_date, delta = None, None
 
-    l = habits.get_user_habits(username)
+    l = habits.get_user_habits(username, interval)
+
     if len(l) > 0:
-        earliest_date = habits.get_oldest_habit_date(username)
-        earliest_date = datetime.datetime.strptime(earliest_date, '%Y-%m-%d').date()
+        earliest_date = habits.get_oldest_habit_date(username, interval)
+        earliest_date = datetime.datetime.strptime(earliest_date, '%Y-%m-%d')
         delta = today - earliest_date
 
-    habits.refresh_habits(username)
+    return template(interval, dict(title=interval + ' habits', user=user, myhabits=l, username=user['username'],
+                                   intervals=delta, earliest_date=earliest_date, datetime=datetime,
+                                   interval=interval))
 
-
-    return template('habits', dict(title='habits', user=user, myhabits=l, 
-                                   max_days=delta.days + 1 if delta else -1, datetime=datetime))
+@route('/habit/<name>/edit')
+def edit_habit(name):
+    username = check_logged_in()
+    habit = habits.get_habit(name.replace('_', ' '), username)
+    return template('edit_habit', dict(habit=habit, username=username, title='edit' + habit['name']))
 
 @route('/habit/<name>')
-def habit():
+def habit(name):
     habit = habit.get_habit(name)
     return template('habit', dict(habit=habit, name=habit['_id']))
 
 @route('/newhabit')
 def newhabit():
     username = check_logged_in()
-    return template('new_habit', dict(username=username, name='', interval = '',
+    return template('new_habit', dict(username=username, title='new habit', name='', interval = '',
                                       occurence='', reminders='', categories=''))
 
 @route('/categories')
@@ -71,7 +94,7 @@ def get_profile():
     categories = habits.get_categories(username)
     best_habits = habits.get_best_habits(username)
     worst_habits = habits.get_worst_habits(username)
-    return template('profile', dict(title='profile', user=user, habits=l,
+    return template('profile', dict(title='profile', user=user, habits=l, username=user['username'],
                                     categories=categories, best_habits=best_habits,
                                     worst_habits=worst_habits))
 
@@ -85,7 +108,8 @@ def logout():
     cookie = request.get_cookie('session')
     sessions.end_session(cookie)
     response.set_cookie('session', '')
-    redirect('/signin')
+    return template('welcome', dict(title='welcome'))
+
 
 ####
 # POSTS
@@ -101,31 +125,12 @@ def post_new_habit():
     categories = request.forms.get('categories').split(',')
     habits.insert_habit(username, name, interval, occurence, reminders, categories)
 
-    redirect('/')
-
-@post('/')
-def update_all_habit_intervals():
-    username = check_logged_in()
-    habit_list = habits.get_user_habits(username)
-    today = datetime.datetime.now().date()
-
-    for habit in habit_list:
-        date_created = datetime.datetime.strptime(habit['dateCreated'], '%Y-%m-%d').date()
-        days_active = today - date_created
-        for day in range(days_active.days, -1, -1):
-            habit_instance = str(habit['name'].replace(' ', '-').replace('\'', '') + '-' + str(today - datetime.timedelta(days=day)))
-            print habit_instance, request.forms.get(habit_instance)
-            habit['completedIntervals'][str(day)] = request.forms.get(habit_instance) == 'true'
-        habits.update_habit_intervals(habit)
-
-    redirect('/')
+    redirect('/habits')
 
 @post('/signin')
 def signin():
     username = request.forms.get('username')
     password = request.forms.get('password')
-
-    print 'user submitted ', username, 'pass ', password
 
     user_record = users.validate_login(username, password)
     if user_record:
@@ -139,7 +144,7 @@ def signin():
 
         habits.refresh_habits(username)
 
-        redirect('/')
+        redirect('/habits/daily')
 
     else:
         return template('signin', dict(username=cgi.escape(username), password='',
@@ -148,13 +153,14 @@ def signin():
 @post('/signup')
 def signup():
     username = request.forms.get('username')
+    email = request.forms.get('email')
     password = request.forms.get('password')
     verify = request.forms.get('verify')
 
-    errors = {'username': cgi.escape(username)}
-    if users.validate_signup(username, password, verify, errors):
+    errors = {'username': cgi.escape(username), 'email': cgi.escape(email)}
+    if users.validate_signup(username, email, password, verify, errors):
 
-        if not users.add_user(username, password):  
+        if not users.add_user(username, email, password):  
             errors['username_error'] = 'username already taken'
             return template('signup', errors)
 
@@ -197,10 +203,44 @@ def server_static(filename):
 ####
 
 @error(404)
-def error404(error):
+def error_404(error):
     cookie = request.get_cookie('session')
     username = sessions.get_username(cookie)
-    return template('404', dict(username=username))
+    return template('error', dict(title='error', username=username, error=error, 
+                                  logged_in= True if username else False))
+
+@error(500)
+def error_500(error):
+    cookie = request.get_cookie('session')
+    username = sessions.get_username(cookie)
+    return template('error', dict(title='error', username=username, error=error,
+                                  logged_in= True if username else False))
+
+####
+# REST FOR HABITS
+####
+
+@route('/habits/get/:id', method='GET')
+def get_habit(id):
+    habit = database.habits.find_one({'_id':id})
+    if not habit:
+        abort(404, 'no habit with id %s' % id)
+    return habit
+
+@route('/habits/put/:id', method='PUT')
+def put_habit(id):
+    data = request.body.readline()
+    if not data:
+        abort(400, 'no data received')
+    habit = json.loads(data)
+    interval = [(key, value) for (key, value) in habit.iteritems() if key.startswith('completedIntervals')][0]
+    if not habit.has_key('_id'):
+        abort(400, 'no _id specified')
+    try:
+        database.habits.update({'_id' : habit['_id']}, {'$set' : { interval[0] : interval[1] } }, upsert=False)
+        return dict(success=True)
+    except TypeError as ve:
+        abort(400, str(ve))
 
 ####
 # HELPER FUNCTIONS
@@ -210,7 +250,7 @@ def check_logged_in():
     cookie = request.get_cookie('session')
     username = sessions.get_username(cookie)
     if username is None:
-        redirect('/signin')
+        redirect('/welcome')
     else:
         return username
 
