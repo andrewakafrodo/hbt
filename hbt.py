@@ -16,6 +16,10 @@ from pymongo import MongoClient
 # ROUTES
 ####
 
+@route('/welcome')
+def get_welcome():
+    return template('welcome', dict(title='welcome'))
+
 @route('/')
 def get_welcome():
     username = check_logged_in()
@@ -67,6 +71,13 @@ def edit_habit(name):
     username = check_logged_in()
     habit = habits.get_habit(name.replace('_', ' '), username)
     return template('edit_habit', dict(habit=habit, username=username, title='edit' + habit['name']))
+
+
+@route('/habit/<name>/delete')
+def edit_habit(name):
+    username = check_logged_in()
+    habit = habits.get_habit(name.replace('_', ' '), username)
+    return template('delete_habit', dict(habit=habit, username=username, title='edit ' + habit['name']))
 
 @route('/habit/<name>')
 def habit(name):
@@ -238,6 +249,33 @@ def put_habit(id):
         abort(400, 'no _id specified')
     try:
         database.habits.update({'_id' : habit['_id']}, {'$set' : { interval[0] : interval[1] } }, upsert=False)
+        return dict(success=True)
+    except TypeError as ve:
+        abort(400, str(ve))
+
+####
+# REST FOR HABITS
+####
+
+@route('/users/get/:id', method='GET')
+def get_habit(id):
+    habit = database.users.find_one({'_id':id})
+    if not habit:
+        abort(404, 'no habit with id %s' % id)
+    return habit
+
+@route('/users/put/:id', method='PUT')
+def put_habit(id):
+    data = request.body.readline()
+    if not data:
+        abort(400, 'no data received')
+    habit = json.loads(data)
+    interval = [(key, value) for (key, value) in habit.iteritems() if key.startswith('completedIntervals')][0]
+    if not habit.has_key('_id'):
+        abort(400, 'no _id specified')
+    try:
+        database.users.update({'_id' : habit['_id']},
+                               {'$set' : { interval[0] : interval[1] } }, upsert=False)
         return dict(success=True)
     except TypeError as ve:
         abort(400, str(ve))
