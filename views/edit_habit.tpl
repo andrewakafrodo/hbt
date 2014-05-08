@@ -15,7 +15,7 @@
 			  <div class="form-group">
 			    <label for="interval" class="col-sm-2 control-label">interval</label>
 			    <div class="col-sm-10">
-					<select name="interval" id="interval" class="form-control">
+					<select name="interval" id="interval" disabled="disabled" class="form-control">
 						<option>daily</option>
 						<option>weekly</option>
 						<option>monthly</option>
