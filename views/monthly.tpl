@@ -8,17 +8,27 @@
 
 			<br>
 
+			%today = datetime.datetime.now()
+
 			<div class="visible-xs visible-sm">
 				%for habit in myhabits:
-					<div class="habit-row">
-						<span class="habit-check glyphicon glyphicon-remove danger"></span>
-						<div class="row">
-							<h4 class="habit-title-xs text-center">{{habit['name']}}</h4>
+
+					%active = datetime.datetime.strptime(habit['dateCreated'], "%Y-%m-%d")
+
+					%if habit['completedIntervals'][str((today.year - active.year) * 12 + today.month - active.month)]:
+						<div class="habit-row bg-success">
+							<i class="fa fa-check-circle-o fa-3x habit-check" style="position:absolute; top:5px; right:20px;"></i>
+							<h3 class="text-left habit-row-name">{{habit['name']}}</h3>
+							<p class="text-left"> months in a row</p>
 						</div>
-						<div class="row">
-							<p class="text-left">days since</p>
+					%else:
+						<div class="habit-row bg-danger">
+							<i class="fa fa-circle-o fa-3x habit-check" style="position:absolute; top:5px; right:20px;"></i>
+							<h3 class="text-left habit-row-name">{{habit['name']}}</h3>
+							<p class="text-left"> months since</p>
 						</div>
-					</div>
+					%end						
+
 				%end
 			</div>
 
@@ -42,8 +52,8 @@
 								<p id="drop4" role="button" data-toggle='dropdown' href="#">{{habit['name']}}</p>
 								<i class="fa fa-cog"></i>
 								<ul id="menu1" class="dropdown-menu" role="menu" aria-labelledby="drop4">
-									<li role="presentation"><a role="menuitem" tabindex="-1" href="#">edit</a></li>
-									<li role="presentation"><a role="menuitem" tabindex="-1" href="#">delete</a></li>
+									<li role="presentation"><a role="menuitem" tabindex="-1" href="/habit/{{habit['name'].replace(' ', '_').replace('\'', '')}}/edit">edit</a></li>
+									<li role="presentation"><a role="menuitem" tabindex="-1" href="/habit/{{habit['name'].replace(' ', '_').replace('\'', '')}}/delete">delete</a></li>
 								</ul>
 							</div>
 
@@ -54,7 +64,6 @@
 
 				<br>
 
-				%today = datetime.datetime.now()
 				%current_month = today.date()
 
 				%for x in range((today.year - earliest_date.year) * 12 + today.month - earliest_date.month + 1):
